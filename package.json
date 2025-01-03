@@ -1,0 +1,21 @@
+{
+  "name": "mongo-pagination",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "npm run build && node --test ./dist/tests/pagination.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/node": "22.10.4",
+    "ts-node": "10.9.2",
+    "typescript": "5.7.2"
+  },
+  "peerDependencies": {
+    "mongoose": "8.9.3"
+  }
+}
