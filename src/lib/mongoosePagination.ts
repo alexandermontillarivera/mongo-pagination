@@ -68,7 +68,7 @@ type DateRangeFilter = {
  * Creates a date filter based on provided date range parameters
  * @template T - The document type for the collection
  */
-const createDateFilter = <T>(
+const createDateFilter = (
 	startDate?: string,
 	endDate?: string,
 	searchBetweenDates = false,
@@ -109,12 +109,12 @@ const createDateFilter = <T>(
  * Processes field-specific filters into MongoDB query operators
  * @template T - The document type for the collection
  */
-const processFilters = <T extends Record<string, any>>(
+const processFilters = <T extends Record<string, unknown>>(
 	filters?: Partial<Record<keyof T, string>>,
 ): FilterQuery<T> => {
 	if (!filters) return {}
 
-	const query: Record<string, any> = {}
+	const query: Record<string, unknown> = {}
 
 	Object.entries(filters).forEach(([key, value]) => {
 		if (value === undefined) return
@@ -135,13 +135,13 @@ const processFilters = <T extends Record<string, any>>(
  * Creates a global search query across all specified filters
  * @template T - The document type for the collection
  */
-const createGlobalSearchQuery = <T extends Record<string, any>>(
+const createGlobalSearchQuery = <T extends Record<string, unknown>>(
 	filters?: Partial<Record<keyof T, string>>,
 ): FilterQuery<T> => {
 	if (!filters) return {}
 
 	const globalConditions = Object.entries(filters)
-		.filter(([_, value]) => value && typeof value === "string")
+		.filter(([, value]) => value && typeof value === "string")
 		.map(([key, value]) => ({
 			[key]: { $regex: value as string, $options: "i" },
 		})) as Array<Record<keyof T, { $regex: string; $options: string }>>
@@ -167,7 +167,7 @@ const createGlobalSearchQuery = <T extends Record<string, any>>(
  * });
  * ```
  */
-export const mongoosePagination = async <T extends Record<string, any>>(
+export const mongoosePagination = async <T extends Record<string, unknown>>(
 	options: PaginationOptions<T>,
 ): Promise<PaginationResult<T>> => {
 	const {
