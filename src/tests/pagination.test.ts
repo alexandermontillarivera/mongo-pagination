@@ -1,8 +1,8 @@
 import assert from "node:assert"
 import mongoose from "mongoose"
-import { mongoosePagination } from "../lib/mongoosePagination"
 import { describe, it, before, after } from "node:test"
 import { Schema, InferSchemaType } from "mongoose"
+import { mongoosePagination } from "../lib/mongoosePagination"
 
 const taskSchema = new Schema({
 	title: { type: String, required: true },
@@ -98,11 +98,10 @@ describe("Mongoose Pagination Tests", async () => {
 	it("should filter by completed status", async () => {
 		const result = await mongoosePagination({
 			Model: TaskModel,
-			filter: { completed: true },
 			filters: { completed: "false" },
 		})
 
-		assert.ok(result.data.every((task) => task.completed === true))
+		assert.ok(result.data.every((task) => task.completed === false))
 	})
 
 	it("should apply date range filters", async () => {
@@ -214,5 +213,66 @@ describe("Mongoose Pagination Tests", async () => {
 		assert.equal(result.metadata.totalPages, Math.ceil(totalTasks / 5))
 		assert.equal(result.metadata.next, totalTasks > 5)
 		assert.equal(result.metadata.previous, false)
+	})
+
+	it("should throw an error for invalid page values", async () => {
+		const values = [0, -1, NaN]
+		await assert.rejects(
+			mongoosePagination({
+				Model: TaskModel,
+				page: values[Math.floor(Math.random() * values.length)],
+			}),
+			{ name: "ErrorInvalidPage" },
+		)
+	})
+
+	it("should throw an error for invalid max values", async () => {
+		const values = [0, -1, NaN]
+		await assert.rejects(
+			mongoosePagination({
+				Model: TaskModel,
+				max: values[Math.floor(Math.random() * values.length)],
+			}),
+			{ name: "ErrorInvalidMax" },
+		)
+	})
+
+	it("should handle invalid date ranges", async () => {
+		const result = await mongoosePagination({
+			Model: TaskModel,
+			startDate: "InvalidDate",
+			endDate: "InvalidDate",
+		})
+
+		assert.equal(result.data.length, 0)
+	})
+
+	it("should handle invalid filters", async () => {
+		const result = await mongoosePagination({
+			Model: TaskModel,
+			filters: { invalidFilter: "invalidValue" },
+		})
+
+		assert.equal(result.data.length, 0)
+	})
+
+	it("should handle invalid global search", async () => {
+		const result = await mongoosePagination({
+			Model: TaskModel,
+			filters: { invalidFilter: "invalidValue" },
+			globalSearch: true,
+		})
+
+		assert.equal(result.data.length, 0)
+	})
+
+	it("should handle invalid sort options", async () => {
+		const result = await mongoosePagination({
+			Model: TaskModel,
+			sort: true,
+			filters: { invalidFilter: "invalidValue" },
+		})
+
+		assert.equal(result.data.length, 0)
 	})
 })
