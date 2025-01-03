@@ -23,7 +23,7 @@ export interface PaginationOptions<T> {
 	/** Additional aggregation pipeline stages */
 	pipeline?: PipelineStage[]
 	/** Fields to extract in the result */
-	extract?: { [K in keyof T]?: boolean }
+	extract?: { [K in keyof T]?: boolean } | { [key: string]: boolean }
 	/** Start date for date range filtering */
 	startDate?: string
 	/** End date for date range filtering */
@@ -31,7 +31,7 @@ export interface PaginationOptions<T> {
 	/** Use exclusive date range (between dates) instead of inclusive */
 	searchBetweenDates?: boolean
 	/** Field-specific filters */
-	filters?: Partial<Record<keyof T, string>>
+	filters?: Partial<Record<keyof T, string>> | { [key: string]: string }
 	/** Enable global search across all specified filters */
 	globalSearch?: boolean
 }
@@ -105,12 +105,26 @@ const createDateFilter = (
 	return dateFilter
 }
 
+export class ErrorInvalidMax extends Error {
+	constructor() {
+		super("Max items per page must be greater than 0")
+		this.name = "ErrorInvalidMax"
+	}
+}
+
+export class ErrorInvalidPage extends Error {
+	constructor() {
+		super("Page number must be greater than 0")
+		this.name = "ErrorInvalidPage"
+	}
+}
+
 /**
  * Processes field-specific filters into MongoDB query operators
  * @template T - The document type for the collection
  */
 const processFilters = <T extends Record<string, unknown>>(
-	filters?: Partial<Record<keyof T, string>>,
+	filters?: Partial<Record<keyof T, string>> | { [key: string]: string },
 ): FilterQuery<T> => {
 	if (!filters) return {}
 
@@ -136,7 +150,7 @@ const processFilters = <T extends Record<string, unknown>>(
  * @template T - The document type for the collection
  */
 const createGlobalSearchQuery = <T extends Record<string, unknown>>(
-	filters?: Partial<Record<keyof T, string>>,
+	filters?: Partial<Record<keyof T, string>> | { [key: string]: string },
 ): FilterQuery<T> => {
 	if (!filters) return {}
 
@@ -186,6 +200,14 @@ export const mongoosePagination = async <T extends Record<string, unknown>>(
 	} = options
 
 	const skip = (page - 1) * max
+
+	if (isNaN(max) || max <= 0) {
+		throw new ErrorInvalidMax()
+	}
+
+	if (isNaN(page) || page <= 0) {
+		throw new ErrorInvalidPage()
+	}
 
 	// Build combined filter
 	const combinedFilter = {
